@@ -134,8 +134,8 @@ impl<R: Read> ReaderState<R> {
                     match name.local_name().as_ref() {
                         b"plist" => {}
                         b"array" => return Ok(Some(Event::StartArray(None))),
-                        b"dict" => return Ok(Some(Event::StartDictionary(None))),
-                        b"key" => {
+                        b"dict" | b"d" => return Ok(Some(Event::StartDictionary(None))),
+                        b"key" | b"k" => {
                             return Ok(Some(Event::String(self.read_content(buffer)?.into())))
                         }
                         b"data" => {
@@ -153,7 +153,7 @@ impl<R: Read> ReaderState<R> {
                                 .map_err(|_| self.with_pos(ErrorKind::InvalidDateString))?;
                             return Ok(Some(Event::Date(date)));
                         }
-                        b"integer" => {
+                        b"integer" | b"i" => {
                             let s = self.read_content(buffer)?;
                             match Integer::from_str(&s) {
                                 Ok(i) => return Ok(Some(Event::Integer(i))),
@@ -162,18 +162,18 @@ impl<R: Read> ReaderState<R> {
                                 }
                             }
                         }
-                        b"real" => {
+                        b"real" | b"r" => {
                             let s = self.read_content(buffer)?;
                             match s.parse() {
                                 Ok(f) => return Ok(Some(Event::Real(f))),
                                 Err(_) => return Err(self.with_pos(ErrorKind::InvalidRealString)),
                             }
                         }
-                        b"string" => {
+                        b"string" | b"s" => {
                             return Ok(Some(Event::String(self.read_content(buffer)?.into())))
                         }
-                        b"true" => return Ok(Some(Event::Boolean(true))),
-                        b"false" => return Ok(Some(Event::Boolean(false))),
+                        b"true" | b"t" => return Ok(Some(Event::Boolean(true))),
+                        b"false" | b"f" => return Ok(Some(Event::Boolean(false))),
                         _ => return Err(self.with_pos(ErrorKind::UnknownXmlElement)),
                     }
                 }
